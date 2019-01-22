@@ -36,7 +36,7 @@ if __name__ == '__main__':
     y_pima = pima['Outcome']
 
     # Define test params
-    k_size = [2, 3, 5, 6, 7, 8]
+    k_size = [2, 3, 4, 5, 6, 7, 8]
     all_data = [[x_mat, y_mat], [x_pima_norm, y_pima]]
     n_iter = 30
 
@@ -90,7 +90,7 @@ if __name__ == '__main__':
     plt.ylabel("Accuracy")
     plt.xlabel("k size")
     plt.title("Synthetic Data: Test Accuracy")
-    plt.savefig("acc_syn.png")
+    plt.savefig("results/acc_syn.png")
     plt.clf()
 
     syn_auc = sns.boxplot(k_size, auc_syn, palette="Blues")
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     plt.ylabel("AUC")
     plt.xlabel("k size")
     plt.title("Synthetic Data: Test AUC")
-    plt.savefig("auc_syn.png")
+    plt.savefig("results/auc_syn.png")
     plt.clf()
 
     pima = sns.boxplot(k_size, acc_pima, palette="Oranges")
@@ -106,7 +106,7 @@ if __name__ == '__main__':
     plt.ylabel("Accuracy")
     plt.xlabel("k size")
     plt.title("PIMA: Test Accuracy")
-    plt.savefig("acc_pima.png")
+    plt.savefig("results/acc_pima.png")
     plt.clf()
 
     pima_auc = sns.boxplot(k_size, auc_pima, palette="Oranges")
@@ -114,7 +114,7 @@ if __name__ == '__main__':
     plt.ylabel("AUC")
     plt.xlabel("k size")
     plt.title("PIMA: Test AUC")
-    plt.savefig("auc_pima.png")
+    plt.savefig("results/auc_pima.png")
     plt.clf()
 
     colors = ['red', 'navy']
@@ -126,7 +126,7 @@ if __name__ == '__main__':
         for j in range(k_size[i]):
             sns.regplot(x=pd.Series(model_k[i][j]['mu'][0],name='x1'), y=pd.Series(model_k[i][j]['mu'][1],name='x2'),
                         fit_reg=False, marker="+", color=sns.color_palette()[j])
-        figname = "preds" + str(i) + ".png"
+        figname = "results/preds" + str(i) + ".png"
         plt.savefig(figname)
         plt.clf()
 
@@ -135,7 +135,7 @@ if __name__ == '__main__':
         value = (labels_k[i] > 0)
         df['color'] = np.where(value == True, colors[0], colors[1])
         sns.regplot(data=df, x='x1', y='x2', fit_reg=False, scatter_kws={'facecolors': df['color']})
-        figname = "labels" + str(i) + ".png"
+        figname = "results/labels" + str(i) + ".png"
         plt.savefig(figname)
         plt.clf()
 
@@ -143,6 +143,6 @@ if __name__ == '__main__':
         df = train_k[i]
         df['group'] = group_k[i]
         sns.lmplot(data=df, x='x1', y='x2', fit_reg=False, hue='group')
-        figname = "groups" + str(i) + ".png"
+        figname = "results/groups" + str(i) + ".png"
         plt.savefig(figname)
         plt.clf()

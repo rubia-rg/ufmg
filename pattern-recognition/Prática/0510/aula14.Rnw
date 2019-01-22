@@ -1,0 +1,74 @@
+\documentclass{article}
+
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+D = dist(x)
+sum(exp(-D(i,)2/2h2))
+
+<<echo=F,fig=T>>=
+rm(list=ls())
+library('MASS')
+library('plot3D')
+
+###################################
+# KDE multivariado #
+mykdemultivar <- function(xi, X, n, N)
+{
+  
+  px <- matrix(nrow=dim(xi)[1],ncol=dim(xi)[2])
+  h <- c()
+  for(i in 1:dim(xi)[1])
+  { 
+    for(j in 1:dim(xi)[2])
+    {
+      h[j] <- 1.06*sd(X[,j])*(N^(-1/5))
+      px[i,j] <- (1/(N*(sqrt(2*pi)*h[j])^n))*
+      sum(exp(-((xi[i,j]-X[,j])^2)/((2*h[j])^2)))
+    }
+  }
+  return(px)
+}
+
+# Densidade multivariada #
+pdfnvar <- function(x,m,k,V){
+  ((1/(sqrt(((2*pi)^k)*det(V))))
+   *exp(-0.5*(t(x-m) %*% solve(V) %*% (x-m))))}
+@
+
+
+<<echo=F,fig=T>>=
+###########################
+
+xrange <- cbind(seq(0.1,6,0.1), seq(0.1,6,0.1))
+
+N <- dim(xrange)[1]
+n <- dim(xrange)[2]
+sd2 <- (0.3)^2
+S <- matrix(c(sd2,0,0,sd2),byrow=T,ncol=2)
+g1 <- mvrnorm(N/2,mu=c(2,2), Sigma=S)
+g2 <- mvrnorm(N/2,mu=c(2,4), Sigma=S)
+g3 <- mvrnorm(N/2,mu=c(4,2), Sigma=S)
+g4 <- mvrnorm(N/2,mu=c(4,4), Sigma=S)
+samples <- rbind(g1,g2,g3,g4)
+
+px1 <- mykdemultivar(xrange, g1, n, N)
+px2 <- mykdemultivar(xrange, g2, n, N)
+px3 <- mykdemultivar(xrange, g3, n, N)
+px4 <- mykdemultivar(xrange, g4, n, N)
+
+pxc1 <- px1[,1] %*% t(px1[,2])
+pxc2 <- px2[,1] %*% t(px2[,2])
+pxc3 <- px3[,1] %*% t(px3[,2])
+pxc4 <- px4[,1] %*% t(px4[,2])
+
+px <- pxc1 + pxc2 + pxc3 + pxc4
+
+plot(samples[,1],samples[,2],type='p',col='red', xlim=c(0,6), ylim=c(0,6),xlab='',ylab='')
+persp3D(xrange[,1],xrange[,2],px)
+@
+
+
+
+\end{document}

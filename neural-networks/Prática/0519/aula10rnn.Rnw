@@ -1,0 +1,5 @@
+par(mfrow=c(1,2))
+plotIterativeError(rede)
+plotRegressionError(predictions[,2], iris$targetsTest[,2])
+rede <- mlp(iris$inputsTrain, iris$targetsTrain, size=5, learnFuncParams=c(0.1),
+            maxit=50, inputsTest=iris$inputsTest, targetsTest=iris$targetsTest)

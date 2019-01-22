@@ -1,0 +1,310 @@
+\documentclass[a4paper, 10pt, conference]{ieeeconf}      
+
+\usepackage[utf8]{inputenc}
+\usepackage[brazil]{babel}
+
+\author{Rúbia Reis Guerra}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\section{DNA}
+<<echo=F,fig=F>>=
+rm(list=ls())
+# Bibliotecas utilizadas #
+library("RSNNS") # Função de treinamento
+library("mlbench") # Dataset
+library(pROC) # Metrica
+data(DNA) # Dataset DNA
+nIter <- 10 # Número de iterações
+
+aucrpropdna <- c()
+aucscgdna <- c()
+aucbpwddna <- c()
+
+for(i in 1:nIter){
+  # Amostragem de dados #
+  dna <- DNA[sample(1:nrow(DNA),length(1:nrow(DNA))),1:ncol(DNA)]
+  dna[is.na(dna)] <- 0
+  dnaValues <- data.matrix(dna[,1:180])
+  dnaTargets <- decodeClassLabels(as.numeric(dna[,181]))
+  
+  # Divisão dos conjuntos de treino e teste #
+  dna <- splitForTrainingAndTest(dnaValues, dnaTargets, ratio=0.30)
+  dna <- normTrainingAndTestSet(dna)
+  
+  # Treinamento
+  # RProp #
+  rprop<-mlp(dna$inputsTrain, dna$targetsTrain, size=2, maxit=40, 
+            inputsTest=dna$inputsTest, targetsTest=dna$targetsTest,
+            initFunc="Randomize_Weights", 
+            learnFunc="Rprop",
+            updateFunc="Topological_Order",
+            updateFuncParams=c(0), 
+            hiddenActFunc="Act_Logistic",
+            shufflePatterns=TRUE, linOut=FALSE)
+  # SCG #
+  scg<-mlp(dna$inputsTrain, dna$targetsTrain, size=2, maxit=40, 
+            inputsTest=dna$inputsTest, targetsTest=dna$targetsTest,
+            initFunc="Randomize_Weights", 
+            learnFunc="SCG",
+            updateFunc="Topological_Order",
+            updateFuncParams=c(0), 
+            hiddenActFunc="Act_Logistic",
+            shufflePatterns=TRUE, linOut=FALSE)
+  
+  # Backpropagation com Weight Decay #
+  bpwd<-mlp(dna$inputsTrain, dna$targetsTrain, size=2, maxit=40, 
+            inputsTest=dna$inputsTest, targetsTest=dna$targetsTest,
+            initFunc="Randomize_Weights", 
+            learnFunc="BackpropWeightDecay",
+            updateFunc="Topological_Order",
+            updateFuncParams=c(0), 
+            hiddenActFunc="Act_Logistic",
+            shufflePatterns=TRUE, linOut=FALSE)
+  # Teste #
+  yrprop <- predict(rprop,dna$inputsTest)
+  yscg <- predict(scg,dna$inputsTest)
+  ybpwd <- predict(bpwd,dna$inputsTest)
+  
+  # ROC #
+  rocrprop <- multiclass.roc(dna$targetsTest, yrprop)
+  rocscg <- multiclass.roc(dna$targetsTest, yscg)
+  rocbpwd <- multiclass.roc(dna$targetsTest, ybpwd)
+  
+  # AUC #
+  aucrpropdna[i] <- rocrprop$auc
+  aucscgdna[i] <- rocscg$auc
+  aucbpwddna[i] <- rocbpwd$auc
+}
+@
+
+\section{Spambase}
+<<echo=F,fig=F>>=
+rm(list=ls())
+# Bibliotecas utilizadas #
+library("RSNNS") # Função de treinamento
+library(pROC) # Metrica
+
+SPAM <- read.csv(file="spambase.data",header=FALSE,sep=',')
+nIter <- 10 # Número de iterações
+
+aucrpropspam <- c()
+aucscgspam <- c()
+aucbpwdspam <- c()
+
+for(i in 1:nIter){
+  # Amostragem de dados #
+  spam <- SPAM[sample(1:nrow(SPAM),length(1:nrow(SPAM))),1:ncol(SPAM)]
+  spam[is.na(spam)] <- 0
+  spamValues <- data.matrix(spam[,1:57])
+  spamTargets <- decodeClassLabels(as.numeric(spam[,58]))
+  
+  # Divisão dos conjuntos de treino e teste #
+  spam <- splitForTrainingAndTest(spamValues, spamTargets, ratio=0.30)
+  spam <- normTrainingAndTestSet(spam)
+  
+  # Treinamento
+  # RProp #
+  rprop<-mlp(spam$inputsTrain, spam$targetsTrain, size=2, maxit=40, 
+            inputsTest=spam$inputsTest, targetsTest=spam$targetsTest,
+            initFunc="Randomize_Weights", 
+            learnFunc="Rprop",
+            updateFunc="Topological_Order",
+            updateFuncParams=c(0), 
+            hiddenActFunc="Act_Logistic",
+            shufflePatterns=TRUE, linOut=FALSE)
+  # SCG #
+  scg<-mlp(spam$inputsTrain, spam$targetsTrain, size=2, maxit=40, 
+            inputsTest=spam$inputsTest, targetsTest=spam$targetsTest,
+            initFunc="Randomize_Weights", 
+            learnFunc="SCG",
+            updateFunc="Topological_Order",
+            updateFuncParams=c(0), 
+            hiddenActFunc="Act_Logistic",
+            shufflePatterns=TRUE, linOut=FALSE)
+  
+  # Backpropagation com Weight Decay #
+  bpwd<-mlp(spam$inputsTrain, spam$targetsTrain, size=2, maxit=40, 
+            inputsTest=spam$inputsTest, targetsTest=spam$targetsTest,
+            initFunc="Randomize_Weights", 
+            learnFunc="BackpropWeightDecay",
+            updateFunc="Topological_Order",
+            updateFuncParams=c(0), 
+            hiddenActFunc="Act_Logistic",
+            shufflePatterns=TRUE, linOut=FALSE)
+  # Teste #
+  yrprop <- predict(rprop,spam$inputsTest)
+  yrprop <- ifelse(yrprop[,1] >= yrprop[,2],1,0)
+  yscg <- (predict(scg,spam$inputsTest)>=0.5)*1
+  yscg <- ifelse(yscg[,1] >= yscg[,2],1,0)
+  ybpwd <- (predict(bpwd,spam$inputsTest)>=0.5)*1
+  ybpwd <- ifelse(ybpwd[,1] >= ybpwd[,2],1,0)
+  
+  targets <- ifelse(spam$targetsTest[,1] >= spam$targetsTest[,2],1,0)
+  
+  # ROC #
+  rocrprop <- roc(targets, yrprop)
+  rocscg <- roc(targets, yscg)
+  rocbpwd <- roc(targets, ybpwd)
+  
+  # AUC #
+  aucrpropspam[i] <- auc(rocrprop)
+  aucscgspam[i] <- auc(rocscg)
+  aucbpwdspam[i] <- auc(rocbpwd)
+}
+@
+
+\section{Titanic}
+<<>>=
+library(kernlab)
+library(caret)
+library(RSNNS)
+library(pROC)
+library(ggplot2)
+normalize <- function(x) {
+  return ((x - min(x)) / (max(x) - min(x)))
+}
+
+# Leitura dos dados #
+column.types <- c('integer',   # PassengerId
+                  'factor',    # Survived 
+                  'factor',    # Pclass
+                  'character', # Name
+                  'factor',    # Sex
+                  'numeric',   # Age
+                  'integer',   # SibSp
+                  'integer',   # Parch
+                  'character', # Ticket
+                  'numeric',   # Fare
+                  'character', # Cabin
+                  'factor'     # Embarked
+)
+
+titanic <- read.csv(file="train.csv",header=TRUE,sep=",",colClasses=column.types,na.strings=c('NA',''))
+@
+
+<<echo=F,fig=T>>=
+ggplot(titanic, aes(x=Survived, fill=Sex)) + geom_bar(color='black')
+@
+
+<<echo=F,fig=T>>=
+ggplot(titanic[-which(is.na(titanic$Age)), ], aes(x=Age, fill=Survived)) + geom_density(alpha=0.6) + facet_grid(.~Sex)
+@
+
+<<echo=F,fig=T>>=
+ggplot(titanic, aes(x=Fare, fill=Survived)) + geom_histogram() + 
+  facet_grid(.~Pclass)
+@
+
+<<echo=F,fig=F>>=
+# Feature Engineering 1: Name #
+# Title
+titanic$Title <- sapply(titanic$Name, FUN=function(x) {strsplit(x, split='[,.]')[[1]][2]})
+titanic$Title[titanic$Title %in% c(' Capt', ' Don', ' Major', ' Sir', ' Jonkheer')] <- 'Sir'
+titanic$Title[titanic$Title %in% c(' Mme', ' Mlle')] <- 'Mme'
+titanic$Title[titanic$Title %in% c(' Dona', ' Lady', ' the Countess',' Ms')] <- 'Lady'
+titanic$Title <- factor(titanic$Title)
+
+# Surname
+titanic$Surname <- sapply(titanic$Name, FUN=function(x) {strsplit(x, split='[,.]')[[1]][1]})
+famSize <- data.frame(table(titanic$Surname))
+smallFam <- famSize[famSize$Freq <= 2,1]
+titanic$Surname[titanic$Surname %in% smallFam] <- 'Small'
+titanic$Surname <- factor(titanic$Surname)
+
+# Feature Engineering 2: Fare #
+# Removing NAs
+titanic$Fare[is.na(titanic$Fare)] <- mean(titanic$Fare,na.rm = TRUE)
+
+# Fare Per Person
+titanic$FarePP <- sapply(titanic$Fare, FUN=function(x) {ifelse(titanic$SibSp[1]+titanic$Parch[1],x/(titanic$SibSp[1]+titanic$Parch[1]+1),x)})
+
+# Feature Engineering 3: Ticket #
+require(stringr)
+titanic$Ticket <- sapply(titanic$Ticket, FUN=function(x) {strsplit(str_replace_all(x,' ','.'),'[.]')[[1]][length(strsplit(str_replace_all(x,' ','.'),'[.]')[[1]])]})
+
+# Feature Engineering 4: Cabin #
+titanic$Cabin[is.na(titanic$Cabin)] <- 'Unknown'
+titanic$Cabin <- sapply(titanic$Cabin, FUN=function(x) {strsplit(x,'')[[1]][1]})
+titanic$Cabin <- factor(titanic$Cabin)
+
+# Feature Engineering 5: Age #
+ageByTitle <- aggregate(titanic$Age[!is.na(titanic$Age)],list(titanic$Title[!is.na(titanic$Age)]),mean)
+titanic$Age[is.na(titanic$Age)] <- sapply(titanic$Title[is.na(titanic$Age)], FUN=function(y) {ageByTitle$x[which(list(y)[[1]][1] == ageByTitle$Group.1)]})
+
+# Feature Engineering 6: Embarked #
+titanic$Embarked[is.na(titanic$Embarked)] <- 'S'
+
+# Treinamento e Teste #
+TITANIC <- titanic[,c(-1,-4,-9)]
+nIter <- 10 # Número de iterações
+
+aucrproptitanic <- c()
+aucscgtitanic <- c()
+aucbpwdtitanic <- c()
+
+for(i in 1:nIter){
+  # Amostragem de dados #
+  titanic <- TITANIC[sample(1:nrow(TITANIC),length(1:nrow(TITANIC))),1:ncol(TITANIC)]
+  titanicValues <- data.matrix(titanic[,-1])
+  titanicTargets <- decodeClassLabels(as.numeric(titanic[,1]))
+  
+  # Divisão dos conjuntos de treino e teste #
+  titanic <- splitForTrainingAndTest(titanicValues, titanicTargets, ratio=0.30)
+  titanic <- normTrainingAndTestSet(titanic)
+  
+  # Treinamento
+  # RProp #
+  rprop<-mlp(titanic$inputsTrain, titanic$targetsTrain, size=2, maxit=40, 
+            inputsTest=titanic$inputsTest, targetsTest=titanic$targetsTest,
+            initFunc="Randomize_Weights", 
+            learnFunc="Rprop",
+            updateFunc="Topological_Order",
+            updateFuncParams=c(0), 
+            hiddenActFunc="Act_Logistic",
+            shufflePatterns=TRUE, linOut=FALSE)
+  # SCG #
+  scg<-mlp(titanic$inputsTrain, titanic$targetsTrain, size=2, maxit=40, 
+            inputsTest=titanic$inputsTest, targetsTest=titanic$targetsTest,
+            initFunc="Randomize_Weights", 
+            learnFunc="SCG",
+            updateFunc="Topological_Order",
+            updateFuncParams=c(0), 
+            hiddenActFunc="Act_Logistic",
+            shufflePatterns=TRUE, linOut=FALSE)
+  
+  # Backpropagation com Weight Decay #
+  bpwd<-mlp(titanic$inputsTrain, titanic$targetsTrain, size=2, maxit=40, 
+            inputsTest=titanic$inputsTest, targetsTest=titanic$targetsTest,
+            initFunc="Randomize_Weights", 
+            learnFunc="BackpropWeightDecay",
+            updateFunc="Topological_Order",
+            updateFuncParams=c(0), 
+            hiddenActFunc="Act_Logistic",
+            shufflePatterns=TRUE, linOut=FALSE)
+  # Teste #
+  yrprop <- predict(rprop,titanic$inputsTest)
+  yrprop <- ifelse(yrprop[,1] >= yrprop[,2],1,0)
+  yscg <- (predict(scg,titanic$inputsTest)>=0.5)*1
+  yscg <- ifelse(yscg[,1] >= yscg[,2],1,0)
+  ybpwd <- (predict(bpwd,titanic$inputsTest)>=0.5)*1
+  ybpwd <- ifelse(ybpwd[,1] >= ybpwd[,2],1,0)
+  
+  targets <- ifelse(titanic$targetsTest[,1] >= titanic$targetsTest[,2],1,0)
+  
+  # ROC #
+  rocrprop <- roc(targets, yrprop)
+  rocscg <- roc(targets, yscg)
+  rocbpwd <- roc(targets, ybpwd)
+  
+  # AUC #
+  aucrproptitanic[i] <- auc(rocrprop)
+  aucscgtitanic[i] <- auc(rocscg)
+  aucbpwdtitanic[i] <- auc(rocbpwd)
+}
+@
+
+
+
+\end{document}
