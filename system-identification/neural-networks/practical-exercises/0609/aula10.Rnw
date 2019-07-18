@@ -1,0 +1,111 @@
+\documentclass{article}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+Spam:
+<<echo=T,fig=F>>=
+rm(list=ls())
+library("RSNNS")
+library("kernlab")
+data(spam)
+spam <- spam[sample(1:nrow(spam),length(1:nrow(spam))),1:ncol(spam)]
+
+spamValues <- spam[,1:57]
+spamTargets <- decodeClassLabels(spam[,58])
+
+spam <- splitForTrainingAndTest(spamValues, spamTargets, ratio=0.30)
+spam <- normTrainingAndTestSet(spam)
+
+# Treino
+rede<-mlp(spam$inputsTrain, spam$targetsTrain, size=5, maxit=40, 
+          inputsTest=spam$inputsTest, targetsTest=spam$targetsTest,
+          initFunc="Randomize_Weights", 
+          initFuncParams=c(-0.3, 0.3), 
+          learnFunc="Rprop",
+          learnFuncParams=c(0.1, 0.1), 
+          updateFunc="Topological_Order",
+          updateFuncParams=c(0), 
+          hiddenActFunc="Act_Logistic",
+          shufflePatterns=TRUE, linOut=FALSE)
+
+yhat <- (predict(rede,spam$inputsTest) >= 0.5)*1 # Teste
+
+mean(sqrt((yhat-spam$targetsTest)^2)) # MSE
+
+summary(rede)
+rede
+
+@
+
+ubIonosphere:
+<<echo=T,fig=F>>=
+rm(list=ls())
+library("RSNNS")
+library("unbalanced")
+data(ubIonosphere)
+ubIonosphere <- ubIonosphere[sample(1:nrow(ubIonosphere),length(1:nrow(ubIonosphere))),1:ncol(ubIonosphere)]
+
+ubIValues <- ubIonosphere[,1:32]
+ubITargets <- decodeClassLabels(ubIonosphere[,33])
+
+ubIonosphere <- splitForTrainingAndTest(ubIValues, ubITargets, ratio=0.30)
+ubIonosphere <- normTrainingAndTestSet(ubIonosphere)
+
+# Treino
+rede<-mlp(ubIonosphere$inputsTrain, ubIonosphere$targetsTrain, size=5, maxit=40, 
+          inputsTest=ubIonosphere$inputsTest, targetsTest=ubIonosphere$targetsTest,
+          initFunc="Randomize_Weights", 
+          initFuncParams=c(-0.3, 0.3), 
+          learnFunc="Rprop",
+          learnFuncParams=c(0.1, 0.1), 
+          updateFunc="Topological_Order",
+          updateFuncParams=c(0), 
+          hiddenActFunc="Act_Logistic",
+          shufflePatterns=TRUE, linOut=FALSE)
+
+yhat <- (predict(rede,ubIonosphere$inputsTest) >= 0.5)*1 # Teste
+
+mean(sqrt((yhat-ubIonosphere$targetsTest)^2)) # MSE
+
+summary(rede)
+rede
+
+@
+
+Titanic
+<<echo=T,fig=F>>=
+rm(list=ls())
+library("RSNNS")
+library("kernlab")
+data(spam)
+spam <- spam[sample(1:nrow(spam),length(1:nrow(spam))),1:ncol(spam)]
+
+spamValues <- spam[,1:57]
+spamTargets <- decodeClassLabels(spam[,58])
+
+spam <- splitForTrainingAndTest(spamValues, spamTargets, ratio=0.30)
+spam <- normTrainingAndTestSet(spam)
+
+# Treino
+rede<-mlp(spam$inputsTrain, spam$targetsTrain, size=5, maxit=40, 
+          inputsTest=spam$inputsTest, targetsTest=spam$targetsTest,
+          initFunc="Randomize_Weights", 
+          initFuncParams=c(-0.3, 0.3), 
+          learnFunc="Rprop",
+          learnFuncParams=c(0.1, 0.1), 
+          updateFunc="Topological_Order",
+          updateFuncParams=c(0), 
+          hiddenActFunc="Act_Logistic",
+          shufflePatterns=TRUE, linOut=FALSE)
+
+yhat <- (predict(rede,spam$inputsTest) >= 0.5)*1 # Teste
+
+mean(sqrt((yhat-spam$targetsTest)^2)) # MSE
+
+summary(rede)
+rede
+
+@
+
+\end{document}

@@ -1,0 +1,76 @@
+\documentclass{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[brazil]{babel}
+
+\title{Exercício 8: Seleção de Características}
+\author{Rúbia Reis Guerra \\ 2013031143}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\maketitle
+
+\section{Seleção de Características}
+Nesta atividade, foi proposta a análise do dataset \textit{BCW (BreastCancer)}, implementando a seleção de características via Kmeans, F-Score e clustering hieráquico.
+
+<<echo=T,fig=F>>=
+rm(list=ls())
+library('MASS')
+library('mlbench')
+library('mclust')
+library('stats')
+fscore <- function(X,c1,c2,n){
+  f <- c()
+  for(i in 1:n)
+  {
+    f[i] <- ((mean(c1[,i]) - mean(X[,i]))^2+(mean(c2[,i]) - mean(X[,i]))^2)/(sd(c1[,i])^2+sd(c2[,i])^2)
+  }
+  return(f)
+}
+@
+
+
+<<echo=T,fig=F>>=
+###########################
+# Dataset BreastCancer #
+data(BreastCancer)
+X<- data.matrix(BreastCancer[,2:10])
+X[is.na(X)] <- 0
+Y <- as.numeric(BreastCancer$Class)
+
+c1 <- X[which(Y==1),]
+c2 <- X[which(Y==2),]
+
+N <- dim(X)[1]
+n <- dim(X)[2]
+@
+
+<<echo=T,fig=T>>=
+###########################
+# F-Score #
+f <- fscore(X,c1,c2,n)
+hist(dist(t(c1)))
+
+@
+
+<<echo=T,fig=T>>=
+###########################
+# Kmeans # 
+k <- list()
+for(i in 1:(nrow(t(X))-1))
+{
+  h <- kmeans(t(X),i)
+  k[[i]] <- h$cluster
+}
+k
+@
+
+<<echo=T,fig=T>>=
+###########################
+# Hierarchical clustering #
+clusters <- hclust(dist(t(X)))
+plot(clusters)
+@
+
+\end{document}

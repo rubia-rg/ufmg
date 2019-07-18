@@ -1,0 +1,22 @@
+\documentclass{article}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+H (hidden): correspondência dos valores da camada escondida
+
+
+<<echo=F,fig=F>>=
+rm(list=ls())
+library('corpcor')
+######################
+# Geracao dos dados #
+N <- 20
+x <- runif(n=N, min=-15, max=10)
+xgrid <- seq(-15,10,0.1)
+yr <- (0.5*x^2+3*x+10) + 10*rnorm(length(x))
+plot(x,yr,type='l')
+@
+
+
+\end{document}

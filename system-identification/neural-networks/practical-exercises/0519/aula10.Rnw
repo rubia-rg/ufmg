@@ -1,0 +1,145 @@
+\documentclass{article}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+SNNS: entrada senoidal - Regressao
+<<echo=T,fig=F>>=
+
+rm(list=ls())
+library("RSNNS")
+N<-20
+x<-runif(N,0,2*pi)
+y<-sin(x)+rnorm(N,0,0.1)
+
+# Treino
+rede<-mlp(x, y, size=3, maxit=400, 
+          initFunc="Randomize_Weights", 
+          initFuncParams=c(-0.3, 0.3), 
+          learnFunc="Rprop",
+          learnFuncParams=c(0.1, 0.1), 
+          updateFunc="Topological_Order",
+          updateFuncParams=c(0), 
+          hiddenActFunc="Act_Logistic",
+          shufflePatterns=TRUE, linOut=TRUE)
+
+xt <- seq(0,2*pi,0.01)
+yseno <- sin(xt)
+yhat <- predict(rede,as.matrix(xt)) # Teste
+
+
+par(mfrow=c(1,2))
+plot(x,y, type='p', col='black',xlim=c(min(xt),max(xt)), ylim=c(min(yseno),max(yseno)),xlab='x', ylab='y')
+par(new=T)
+plot(xt,yseno, type='l', col='blue',xlim=c(min(xt),max(xt)), ylim=c(min(yseno),max(yseno)),xlab='x', ylab='y')
+par(new=T)
+plot(xt,yhat, type='l', col='red',xlim=c(min(xt),max(xt)), ylim=c(min(yseno),max(yseno)),xlab='x', ylab='y')
+plotIterativeError(rede)
+
+@
+
+SNNS: iris - Classificacao
+<<echo=T,fig=F>>=
+rm(list=ls())
+library("RSNNS")
+data(iris)
+iris <- iris[sample(1:nrow(iris),length(1:nrow(iris))),1:ncol(iris)]
+
+irisValues <- iris[,1:4]
+irisTargets <- decodeClassLabels(iris[,5])
+
+iris <- splitForTrainingAndTest(irisValues, irisTargets, ratio=0.30)
+iris <- normTrainingAndTestSet(iris)
+
+# Treino
+rede<-mlp(iris$inputsTrain, iris$targetsTrain, size=5, maxit=40, 
+          inputsTest=iris$inputsTest, targetsTest=iris$targetsTest,
+          initFunc="Randomize_Weights", 
+          initFuncParams=c(-0.3, 0.3), 
+          learnFunc="Rprop",
+          learnFuncParams=c(0.1, 0.1), 
+          updateFunc="Topological_Order",
+          updateFuncParams=c(0), 
+          hiddenActFunc="Act_Logistic",
+          shufflePatterns=TRUE, linOut=FALSE)
+
+yhat <- (predict(rede,iris$inputsTest) >= 0.5)*1 # Teste
+
+mean(sqrt((yhat-iris$targetsTest)^2)) # MSE
+
+summary(rede)
+rede
+
+@
+
+Spam:
+<<echo=T,fig=F>>=
+rm(list=ls())
+library("RSNNS")
+library("kernlab")
+data(spam)
+spam <- spam[sample(1:nrow(spam),length(1:nrow(spam))),1:ncol(spam)]
+
+spamValues <- spam[,1:57]
+spamTargets <- decodeClassLabels(spam[,58])
+
+spam <- splitForTrainingAndTest(spamValues, spamTargets, ratio=0.30)
+spam <- normTrainingAndTestSet(spam)
+
+# Treino
+rede<-mlp(spam$inputsTrain, spam$targetsTrain, size=5, maxit=40, 
+          inputsTest=spam$inputsTest, targetsTest=spam$targetsTest,
+          initFunc="Randomize_Weights", 
+          initFuncParams=c(-0.3, 0.3), 
+          learnFunc="Rprop",
+          learnFuncParams=c(0.1, 0.1), 
+          updateFunc="Topological_Order",
+          updateFuncParams=c(0), 
+          hiddenActFunc="Act_Logistic",
+          shufflePatterns=TRUE, linOut=FALSE)
+
+yhat <- (predict(rede,spam$inputsTest) >= 0.5)*1 # Teste
+
+mean(sqrt((yhat-spam$targetsTest)^2)) # MSE
+
+summary(rede)
+rede
+
+@
+
+ubIonosphere:
+<<echo=T,fig=F>>=
+rm(list=ls())
+library("RSNNS")
+library("unbalanced")
+data(ubIonosphere)
+ubIonosphere <- ubIonosphere[sample(1:nrow(ubIonosphere),length(1:nrow(ubIonosphere))),1:ncol(ubIonosphere)]
+
+ubIValues <- ubIonosphere[,1:32]
+ubITargets <- decodeClassLabels(ubIonosphere[,33])
+
+ubIonosphere <- splitForTrainingAndTest(ubIValues, ubITargets, ratio=0.30)
+ubIonosphere <- normTrainingAndTestSet(ubIonosphere)
+
+# Treino
+rede<-mlp(ubIonosphere$inputsTrain, ubIonosphere$targetsTrain, size=5, maxit=40, 
+          inputsTest=ubIonosphere$inputsTest, targetsTest=ubIonosphere$targetsTest,
+          initFunc="Randomize_Weights", 
+          initFuncParams=c(-0.3, 0.3), 
+          learnFunc="Rprop",
+          learnFuncParams=c(0.1, 0.1), 
+          updateFunc="Topological_Order",
+          updateFuncParams=c(0), 
+          hiddenActFunc="Act_Logistic",
+          shufflePatterns=TRUE, linOut=FALSE)
+
+yhat <- (predict(rede,ubIonosphere$inputsTest) >= 0.5)*1 # Teste
+
+mean(sqrt((yhat-ubIonosphere$targetsTest)^2)) # MSE
+
+summary(rede)
+rede
+
+@
+
+\end{document}

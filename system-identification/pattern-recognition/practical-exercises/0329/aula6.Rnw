@@ -1,0 +1,122 @@
+\documentclass{article}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\section{Bayes}
+
+- Separar dados em teste/treino, rodar classe teste
+- colMeans
+
+
+%https://eight2late.wordpress.com/2015/11/06/a-gentle-introduction-to-naive-bayes-classification-using-r/
+
+<<echo=F,fig=F>>=
+library('rgl')
+library('MASS')
+rm(list=ls())
+
+###########################
+# Functions #
+
+fnormalmultivar <- function(x,m,k,V)
+{
+  f <- ((1/(sqrt(((2*pi)^k)*det(V))))*exp(-0.5*(t(x-m) %*% solve(V) %*% (x-m))))
+  return(f)
+}
+
+posterior <- function(test, train, prior)
+{
+  return()
+  
+}
+
+###########################
+# Iris Dataset #
+
+data(iris)
+as.matrix(iris)
+X <- as.matrix(iris[,1:4])
+Y <- as.matrix(iris[,5])
+Y1 <- matrix(0, nrow=50,ncol=1)
+Y2 <- matrix(1, nrow=100,ncol=1)
+Y <- rbind(Y1,Y2)
+
+###########################
+# Shuffle data #
+
+set.seed(1234)
+index <- sample(2, nrow(iris), replace=TRUE, prob=c(0.8,0.2))
+
+###########################
+# Training Set #
+
+training <- X[index==1]
+trainingLabels <- Y[index==1]
+
+###########################
+# Test Set #
+
+test <- X[index==2]
+testLabes <- Y[index==2]
+
+###########################
+
+# Training #
+
+#colMeans(training)
+#cov(training)
+
+# plot(c1[,1], c1[,2], col='red', type='p', xlim=c(0,6), ylim=c(0,6),xlab='x_1',ylab='x_2')
+# par(new=T)
+# plot(c2[,1], c2[,2], col='blue', type='p', xlim=c(0,6), ylim=c(0,6),xlab='',ylab='')
+# 
+# ############################
+# 
+# m11 <- mean(c1[,1])
+# s11 <- sd(c1[,1])
+# 
+# m12 <- mean(c1[,2])
+# s12 <- sd(c1[,2])
+# cr1 <- cor(c1[,1],c1[,2])
+# cv1 <- cov(c1)
+#   
+# m21 <- mean(c2[,1])
+# s21 <- sd(c2[,1])
+# 
+# m22 <- mean(c2[,2])
+# s22 <- sd(c2[,2])
+# cr2 <- cor(c2[,1],c2[,2])
+# cv2 <- cov(c2)
+# 
+# ############################
+# 
+# seqi <- seq(0,6,0.1)
+# seqj <- seq(0,6,0.1)
+# 
+# M1 <- matrix(0,nrow=length(seqi),ncol=length(seqj))
+# M2 <- matrix(0,nrow=length(seqi),ncol=length(seqj))
+# 
+# ############################
+# 
+# ci <- 0
+# for (i in seqi)
+# {
+#   cj <- 0
+#   ci<- ci + 1
+#   for (j in seqj)
+#   {
+#     cj <- cj + 1  
+#     M1[ci,cj]<-fnormalmultivar(c(i,j),c(m11,m12),dim(c1)[2],cv1)
+#     M2[ci,cj]<-fnormalmultivar(c(i,j),c(m21,m22),dim(c2)[2],cv2)
+#   }
+# }
+# 
+# classx<-1*(M1 >= M2) #limiar
+# persp3d(seqi,seqj,M1,col='red',clim=c(0,2),colkey=F)
+# persp3d(seqi,seqj,M2,col='blue',clim=c(0,2),add=T,colkey=F)
+# ribbon3D(seqi,seqj,classx,col='black',clim=c(0,2),add=T,colkey=F)
+@
+
+
+\end{document}

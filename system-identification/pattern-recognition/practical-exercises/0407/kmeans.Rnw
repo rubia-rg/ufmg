@@ -1,0 +1,110 @@
+\documentclass{article}
+
+\title{Exerc?cio 3: K-means Clustering}
+\author{R?bia Reis Guerra \\ 2013031143}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+\maketitle
+
+\section{K-means}
+
+\subsection{Funcoes}
+<<echo=T,fig=F>>=
+##################################################################
+# Funcoes #
+indexDist <- function(xt, u, k, n)
+{
+  d <- matrix(nrow=k,ncol=n)
+  for (i in 1:k)
+  {
+    d[i,] <- sqrt((rowSums((xt-u[i,])^2)))
+}
+  
+  return(which(d==min(d), arr.ind = TRUE)[1,1])
+}
+  
+mykmeans <- function(X, k)
+{
+  # Obtem as dimensoes de X #
+  N <- dim(X)[1]
+  n <- dim(X)[2]
+  
+  # Numero de iteracoes max. #
+  max <- 1000
+  
+  # u: k-centros de X
+  u <- matrix(nrow=k, ncol=n)
+  
+  xseq <- sample(N)
+  
+  u <- X[xseq[1:k],] # vetor de exemplos
+  
+  # calcular dist do padrao ao centro
+  # rotular padrao conforme min dist
+  # atribui a um vetor
+  xt <- c()
+  
+  groups <- c()
+  old <- c()
+  flag <- TRUE
+  count <- 0
+  while(count < max && flag==TRUE)
+  {
+    count <- count + 1
+    old <- groups
+    for (i in 1:N)
+    {
+      xt <- X[i,]
+      groups[i] <- indexDist(xt, u, k, n)
+    }
+    
+    # Calcula novos centros pelas medias de cada grupo
+    for (i in 1:k){ u[i,] <- mean(X[groups==i]) }
+    
+    flag <- ifelse(all.equal(groups,old)==TRUE, TRUE, FALSE)
+    
+  }
+  
+  # retornar centros, gx: grupo de x
+  return(list(u,groups))
+}
+@
+
+\subsection{Plot amostras}
+<<echo=T,fig=T>>=
+##################################################################
+k <- 2
+cores <- rainbow(k)
+minseq <- 0
+maxseq <- 6
+
+s1 <- s2 <- s3 <- s4 <- 0.3
+nc <- 100
+xc1 <- matrix(rnorm(nc*2) , ncol=2)*s1 + t(matrix(c(2, 2), nrow=2, ncol=nc))
+xc2 <- matrix(rnorm(nc*2), ncol=2)*s2 + t(matrix(c(4, 4), nrow=2, ncol=nc))
+xc3 <- matrix(rnorm(nc*2), ncol=2)*s3 + t(matrix(c(2, 4), nrow=2, ncol=nc))
+xc4 <- matrix(rnorm(nc*2), ncol=2)*s4 + t(matrix(c(4, 2), nrow=2, ncol=nc))
+samples <- rbind(xc1,xc2)
+plot(samples[,1],samples[,2],type='p', xlim=c(minseq,maxseq), ylim=c(minseq,maxseq))
+@
+
+\subsection{Plot Kmeans}
+<<echo=T,fig=T>>=
+##################################################################
+b <- mykmeans(samples, 2)
+c <- kmeans(samples, 2)
+plot(b[[1]][1,1],b[[1]][1,2],type='p',pch='+',col='green',xlab='',ylab='',xlim=c(minseq, maxseq),ylim=c(minseq, maxseq))
+par(new=T)
+plot(b[[1]][2,1],b[[1]][2,2],type='p',pch='+',col='red',xlab='',ylab='',xlim=c(minseq, maxseq),ylim=c(minseq, maxseq))
+par(new=T)
+#plot(b[[1]][3,1],b[[1]][3,2],type='p',pch='+',col='blue',xlab='',ylab='',xlim=c(minseq, maxseq),ylim=c(minseq, maxseq))
+par(new=T)
+plot(samples[b[[2]]==1,1],samples[b[[2]]==1,2],type='p',col='green',xlab='',ylab='',xlim=c(minseq, maxseq),ylim=c(minseq, maxseq))
+par(new=T)
+plot(samples[b[[2]]==2,1],samples[b[[2]]==2,2],type='p',col='red',xlab='',ylab='',xlim=c(minseq, maxseq),ylim=c(minseq, maxseq))
+par(new=T)
+#plot(samples[b[[2]]==3,1],samples[b[[2]]==3,2],type='p',col='blue',xlim=c(minseq, maxseq),ylim=c(minseq, maxseq))
+@
+
+\end{document}

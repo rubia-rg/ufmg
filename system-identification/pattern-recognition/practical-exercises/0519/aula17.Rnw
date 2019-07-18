@@ -1,0 +1,45 @@
+\documentclass{article}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+% http://blog.revolutionanalytics.com/2015/10/the-5th-tribe-support-vector-machines-and-caret.html
+
+<<echo=F,fig=F>>=
+rm(list=ls())
+library('mlbench')
+library('kernlab')
+library('caret')
+
+data(BreastCancer)
+X <- data.matrix(BreastCancer[,2:10])
+X[is.na(X)] <- 0
+Y <- BreastCancer$Class
+
+
+trainIndex <- createDataPartition(BreastCancer$Class,p=.7,list=FALSE)
+trainData <- X[trainIndex,]
+testData  <- X[-trainIndex,]
+trainLabels <- Y[trainIndex]
+testLabels <- Y[-trainIndex]
+
+set.seed(1492)
+ctrl <- trainControl(method="repeatedcv",
+                     repeats=5,
+                     summaryFunction=twoClassSummary,
+                     classProbs=TRUE)
+
+
+svm.tune <- train(x=trainData,
+                  y=trainLabels,
+                  method = "svmRadial",
+                  tuneLength = 9,
+                  preProc = c("center","scale"),
+                  metric="ROC",
+                  trControl=ctrl)
+
+
+@
+
+
+\end{document}

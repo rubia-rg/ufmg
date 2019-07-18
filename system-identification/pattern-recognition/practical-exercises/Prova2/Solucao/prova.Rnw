@@ -1,0 +1,192 @@
+\documentclass{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[brazil]{babel}
+
+\title{Avaliação de Reconhecimento de Padrões}
+\author{Rúbia Reis Guerra \\ 2013031143}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+\maketitle
+
+\section{Pacotes utilizados}
+<<echo=T,fig=F>>=
+rm(list=ls())
+library('MASS')
+library('mlbench')
+library('mclust')
+library('stats')
+library('kernlab')
+library('caret')
+###########################
+# F-Score #
+fscore <- function(X,c1,c2,n){
+  f <- c()
+  for(i in 1:n)
+  {
+    f[i] <- ((mean(c1[,i]) - mean(X[,i]))^2
+             +(mean(c2[,i]) - mean(X[,i]))^2)/(sd(c1[,i])^2+sd(c2[,i])^2)
+  }
+  return(f)
+}
+@
+
+\section{Base de Dados}
+<<echo=T,fig=T>>=
+bupa <- as.matrix(read.csv("bupa.data", header=FALSE))
+X <- bupa[,(1:6)] # dados de entrada
+Y <- as.matrix(2*(bupa[,7]-1.5)) # rotulos das classes como [-1,+1]
+i_cm1 <- which(Y == -1) # amostras da classe -1
+i_c1 <- which(Y == 1) # amostras da classe +1
+Nm1 <- length(i_cm1) # tamanho da classe -1
+N1 <- length(i_c1) # tamanho da classe +1
+
+## Plot por pares
+clPairs(bupa, Y)
+@
+
+\section{Análise de Componentes Principais (PCA)}
+<<echo=T,fig=T>>=
+meanx <- colMeans(X)
+Xrep <- X - t(replicate(dim(X)[1],meanx))
+pcaX <- prcomp(Xrep)
+us <- pcaX$rotation
+projX <- Xrep %*% us
+summary(pcaX)
+barplot(pcaX$sdev)
+@
+
+A partir dos autovalores encontrados para o dataset \textit{bupa}, observamos que as três primeiras coordenadas concentram a maior parte da varância dos dados.
+<<echo=T,fig=T>>=
+# Reduzindo para os dois primeiros eixos
+plot(projX[,1],projX[,2],type='p',
+     xlim=c(min(projX[,1]),max(projX[,1])),
+     ylim=c(min(projX[,2]),max(projX[,2])),
+     xlab='PCA1',ylab='PCA2',col='blue')
+par(new=TRUE)
+plot(projX[which(Y==1),1],projX[which(Y==1),2],type='p',
+     xlim=c(min(projX[,1]),max(projX[,1])),
+     ylim=c(min(projX[,2]),max(projX[,2])),
+     col='red',xlab='PCA1',ylab='PCA2',
+     sub='Projeção das classes em PCA1 e PCA2')
+@
+
+Em contrapartida, as cordenadas 4 a 6 pouco representam a variância do dataset. Pode-se observar uma maior sobreposição das classes na projeção abaixo:
+<<echo=T,fig=T>>=
+# Comparacao: reduzindo aos eixos 4 e 5
+plot(projX[,4],projX[,5],type='p',
+     xlim=c(min(projX[,4]),max(projX[,4])),
+     ylim=c(min(projX[,5]),max(projX[,5])),
+     xlab='PCA4',ylab='PCA5',col='blue')
+par(new=TRUE)
+plot(projX[which(Y==1),4],projX[which(Y==1),5],type='p',
+     xlim=c(min(projX[,4]),max(projX[,4])),
+     ylim=c(min(projX[,5]),max(projX[,5])),col='red',
+     xlab='PCA4',ylab='PCA5',
+     sub='Projeção das classes em PCA4 e PCA5')
+@
+
+\section{Seleção de Características}
+Para identificar as características da base \textit{bupa} que melhor representam a variância dos dados, podemos comparar os resultados obtidos por meio de F-score e clustering (kmeans e clustering hierárquico), e, então inferir a importância dos atributos.
+\subsection{F-Score}
+<<echo=T,fig=F>>=
+###########################
+# F-Score #
+c1 <- X[which(Y==-1),]
+c2 <- X[which(Y==1),]
+n <- dim(X)[2]
+f <- fscore(X,c1,c2,n)
+print(f)
+@
+Ordenando os atributos pelo grau de concentração de variância dos dados:
+<<echo=T,fig=F>>=
+colnames(X[,order(f)])
+@
+\subsection{K-Means}
+<<echo=T,fig=F>>=
+###########################
+# Kmeans # 
+k <- list()
+for(i in 1:(nrow(t(X))-1))
+{
+  h <- kmeans(t(X),i)
+  k[[i]] <- h$cluster
+}
+k
+@
+Observando a mudança de agrupamentos a medida que o número de clusters cresce, podemos inferir que:
+\begin{itemize}
+\item Os atributos V1 e V2 encontram-se mais próximos, espacialmente, e distantes dos demais;
+\item Os atributos V3 e V4 encontram-se mais próximos, espacialmente;
+\item No grupo V3 a V5, V5 encontram-se mais afastado dos demais;
+\end{itemize}
+Assim, podemos simplificar a base, eliminando caracterísitcas que pouco representam os dados (por exemplo, V1 e V3, mantendo-se V2 e V4).
+\subsection{Clustering Hierárquico}
+Os resultados obtidos por K-Means podem ser melhor observados no dendograma obtido a partir do clustering hierárquico abaixo:
+<<echo=T, fig=T>>=
+###########################
+# Hierarchical clustering #
+clusters <- hclust(dist(t(X)))
+plot(clusters)
+@
+Observa-se a proximidade dos atributos V1 e V2, em contraste com o grupo V3 a V5, e as similaridades intra-atributos, conforme mencionado na seção anterior.
+
+\section{SVM}
+Utilizando a base de dados fornecida, sem realizar seleção ou extração de características, obtem-se:
+<<echo=T,fig=F>>=
+levels <- unique(Y) 
+Y <- factor(Y, labels=make.names(levels))
+trainIndex <- createDataPartition(bupa[,7],p=.7,list=FALSE)
+trainData <- X[trainIndex,]
+testData  <- X[-trainIndex,]
+trainLabels <- Y[trainIndex]
+testLabels <- Y[-trainIndex]
+
+set.seed(1492)
+ctrl <- trainControl(method="repeatedcv",
+                     repeats=5,
+                     summaryFunction=twoClassSummary,
+                     classProbs=TRUE)
+
+
+svm.tune <- train(x=trainData,
+                  y=trainLabels,
+                  method = "svmRadial",
+                  tuneLength = 9,
+                  preProc = c("center","scale"),
+                  metric="ROC",
+                  trControl=ctrl)
+svm.tune
+@
+Para as condições dadas, encontrou-se o melhor resultado para C = 2.
+
+Utilizando os resultados conforme a análise de componentes principais, obtem-se:
+<<echo=T,fig=F>>=
+levels <- unique(Y) 
+Y <- factor(Y, labels=make.names(levels))
+trainIndex <- createDataPartition(bupa[,7],p=.7,list=FALSE)
+trainData <- projX[trainIndex,]
+testData  <- projX[-trainIndex,]
+trainLabels <- Y[trainIndex]
+testLabels <- Y[-trainIndex]
+
+set.seed(1492)
+ctrl <- trainControl(method="repeatedcv",
+                     repeats=5,
+                     summaryFunction=twoClassSummary,
+                     classProbs=TRUE)
+
+
+svm.tune <- train(x=trainData,
+                  y=trainLabels,
+                  method = "svmRadial",
+                  tuneLength = 9,
+                  preProc = c("center","scale"),
+                  metric="ROC",
+                  trControl=ctrl)
+svm.tune
+@
+Para as condições dadas, encontrou-se o melhor resultado para C = 1, porém, utlizando as projeções da análise de componentes principais, não houve melhora significativa dos resultados do treinamento.
+
+\end{document}

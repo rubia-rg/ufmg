@@ -1,0 +1,137 @@
+\documentclass{article}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+<<echo=T,fig=F>>=
+rm(list=ls())
+library('plot3D')
+
+yperceptron <- function(xvec, w, par)
+{
+  if(par == 1)
+    xvec <- cbind(-1, t(xvec))
+  u <- xvec %*% w
+  y <- 1*(u >= 0)
+  return(as.matrix(y))
+}
+
+trainperceptron <- function(xin, yd, eta, tol, maxepocas, par)
+{
+  dimxin <- dim(xin)
+  N <- dimxin[1] # 
+  n <- dimxin[2] #
+  if(par == 1)
+  {
+    wt <- as.matrix(runif(n+1) - 0.5) # n + 1 linhas (vetor coluna), wt: w transposto
+    xin <- cbind(-1, xin)
+  }
+  else 
+  {
+    wt <- as.matrix(runif(n) - 0.5)
+  }
+  
+  nepocas <- 0 # percorrer todo o espaco
+  eepoca <- tol+1
+  evec <- matrix(nrow=1, ncol=maxepocas) # MSE p/ epoca
+  
+  while ((nepocas < maxepocas) && (eepoca > tol))
+  {
+    ei2 <- 0 # sq error
+    xseq <- sample(N)
+    
+    for(i in 1:N)
+    {
+      irand <- xseq[i]
+      yhati <- as.double((xin[irand,] %*% wt) >= 0) # no adaline, retirar >= 0, x %*% wt
+      ei <- yd[irand]- yhati # erro
+      dw <- eta*ei*xin[irand,] # delta w
+      wt <- wt+dw # ataulizacao w
+      ei2 <- ei2+ei*ei # erro^2
+    }
+    nepocas <- nepocas+1
+    evec[nepocas] <- ei2/N # MSE
+    eepoca <- evec[nepocas] # erro epoca
+  }
+  retlist <- list(wt=wt, evec=evec[1:nepocas])
+  return(retlist)
+}
+@
+
+<<echo=T,fig=T>>=
+N <- 100
+minseq <- 0
+maxseq <- 6
+eta <- 0.1
+tol <- 0.01
+maxepocas <- 10000
+par <- 1
+
+xc1 <- matrix(rnorm(N*2),ncol=2)*0.5+c(2,2)
+xc2 <- matrix(rnorm(N*2),ncol=2)*0.5+c(4,4)
+xin <- rbind(xc1,xc2)
+
+yd <- rbind(matrix(0, nrow=N, ncol=1), matrix(1, nrow=N, ncol=1))
+
+
+plot(xc1[,1], xc1[,2], col='red', type='p', xlim=c(minseq,maxseq), 
+     ylim=c(minseq,maxseq), xlab='x_1', ylab='x_2')
+par(new=T)
+plot(xc2[,1], xc2[,2], col='blue', type='p', xlim=c(minseq,maxseq), 
+     ylim=c(minseq,maxseq), xlab='', ylab='')
+@
+
+
+<<echo=T,fig=F>>=
+train <- list()
+train <- trainperceptron(xin,yd,eta,tol,maxepocas,par)
+
+w <- train$wt
+paste(w)
+@
+
+
+<<echo=T,fig=F>>=
+seqi <- seq(minseq,maxseq,0.1)
+seqj <- seq(minseq,maxseq,0.1)
+M <- matrix(1,nrow =length(seqi),ncol=length(seqj))
+
+ci <- 0
+for (i in seqi)
+{
+  ci <- ci+1
+  cj <- 0
+  for (j in seqj)
+  {
+    cj <- cj + 1
+    xt <- c(i,j)
+    M[ci,cj] <- yperceptron(xt,w,1)
+  }
+}
+@
+
+
+<<echo=T,fig=T>>=
+plot(xc1[,1], xc1[,2], col='red', type='p', xlim=c(minseq,maxseq), 
+     ylim=c(minseq,maxseq),xlab='x_1',ylab='x_2')
+par(new=T)
+plot(xc2[,1], xc2[,2], col='blue', type='p', xlim=c(minseq,maxseq), 
+     ylim=c(minseq,maxseq),xlab='',ylab='')
+par(new=T)
+contour(seqi,seqj,M,xlim=c(minseq,maxseq), 
+     ylim=c(minseq,maxseq),xlab='',ylab='')
+@
+
+<<echo=T, fig=T>>=
+persp(seqi,seqj,xlim=c(0,6),ylim=c(0,6),M,theta=-20,phi=80)
+@
+
+<<echo=T,fig=T>>=
+ribbon3D(seqi,seqj,M, xlim=c(minseq,maxseq), ylim=c(minseq,maxseq), 
+         zlim=c(0,1), contour=T, add=F, axes=T, ticktype="detailed")
+
+scatter3D(xc1[,1],xc1[,2], matrix(0,nrow=dim(xc1)[1]),add=T,col='red')
+scatter3D(xc2[,1],xc2[,2], matrix(0,nrow=dim(xc2)[1]),add=T,col='blue')
+@
+
+\end{document}
